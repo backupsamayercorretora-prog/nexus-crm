@@ -8,9 +8,16 @@ import ClientList from './components/ClientList';
 import Dashboard from './components/Dashboard';
 import CoPilotDrawer from './components/CoPilotDrawer';
 import DealModal from './components/DealModal';
+import Login from './components/Login';
 import { Sparkles, Bot, Settings2, RefreshCw, CheckCircle2, ChevronRight, HelpCircle } from 'lucide-react';
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return localStorage.getItem('crm_lite_authenticated') === 'true';
+  });
+  const [operatorEmail, setOperatorEmail] = useState<string>(() => {
+    return localStorage.getItem('crm_lite_operator_email') || 'contato@nexus.com';
+  });
   const [currentTab, setCurrentTab] = useState<'kanban' | 'clients' | 'analytics' | 'settings'>('kanban');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -171,15 +178,39 @@ export default function App() {
     }
   };
 
+  const handleLogin = (email: string) => {
+    setIsAuthenticated(true);
+    setOperatorEmail(email);
+    localStorage.setItem('crm_lite_authenticated', 'true');
+    localStorage.setItem('crm_lite_operator_email', email);
+  };
+
+  const handleLogout = () => {
+    if (window.confirm('Deseja realmente sair da sua sessão no Nexus CRM?')) {
+      setIsAuthenticated(false);
+      localStorage.removeItem('crm_lite_authenticated');
+      localStorage.removeItem('crm_lite_operator_email');
+    }
+  };
+
   const activeCoPilotClient = coPilotDeal
     ? clients.find(c => c.id === coPilotDeal.clientId) || null
     : null;
+
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   return (
     <div className="flex h-screen bg-slate-100 overflow-hidden font-sans">
       
       {/* Sidebar de navegação do Bitrix */}
-      <Sidebar currentTab={currentTab} onChangeTab={setCurrentTab} />
+      <Sidebar 
+        currentTab={currentTab} 
+        onChangeTab={setCurrentTab} 
+        operatorEmail={operatorEmail}
+        onLogout={handleLogout}
+      />
 
       {/* Conteúdo Central */}
       <div className="flex-1 flex flex-col min-w-0">
